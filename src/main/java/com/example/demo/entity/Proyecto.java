@@ -2,6 +2,8 @@ package com.example.demo.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity @Table(name = "proyectos")
 @Data
@@ -22,7 +24,13 @@ public class Proyecto {
     @Column(nullable = false)
     private EstadoRegistro estadoRegistro = EstadoRegistro.ACTIVO;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "trabajador_id", nullable = false)
-    private Trabajador trabajador;
+    @ManyToMany
+    @JoinTable(
+        name = "proyectos_trabajadores",
+        joinColumns = @JoinColumn(name = "proyecto_id"),
+        inverseJoinColumns = @JoinColumn(name = "trabajador_id")
+    )
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<Trabajador> trabajadores = new ArrayList<>();
 }

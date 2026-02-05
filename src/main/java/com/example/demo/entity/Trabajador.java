@@ -20,6 +20,13 @@ public class Trabajador {
     private String email;
     private String telefono;
     private LocalDate fechaIngreso = LocalDate.now();
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TipoDocumento tipoDocumento;
+
+    @Column(nullable = false, length = 15)
+    private String numeroDocumento;
     
     @Enumerated(EnumType.STRING)
     private Cargo cargo;
@@ -28,6 +35,8 @@ public class Trabajador {
     @Column(nullable = false)
     private EstadoRegistro estadoRegistro = EstadoRegistro.ACTIVO;
     
-    @OneToMany(mappedBy = "trabajador", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ManyToMany(mappedBy = "trabajadores")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<Proyecto> proyectos = new ArrayList<>();
 }

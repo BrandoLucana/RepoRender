@@ -4,6 +4,7 @@ import com.example.demo.entity.EstadoRegistro;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class ProyectoDTO {
@@ -19,5 +20,6 @@ public class ProyectoDTO {
     
     private EstadoProyecto estado;
     private Long trabajadorId;
+    private List<Long> trabajadorIds;
     private EstadoRegistro estadoRegistro;
 }

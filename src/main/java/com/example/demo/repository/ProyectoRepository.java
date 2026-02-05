@@ -12,6 +12,6 @@ import java.util.Optional;
 public interface ProyectoRepository extends JpaRepository<Proyecto, Long> {
     List<Proyecto> findByEstadoRegistro(EstadoRegistro estadoRegistro);
     Optional<Proyecto> findByIdAndEstadoRegistro(Long id, EstadoRegistro estadoRegistro);
-    List<Proyecto> findByTrabajadorIdAndEstadoRegistro(Long trabajadorId, EstadoRegistro estadoRegistro);
+    List<Proyecto> findByTrabajadoresIdAndEstadoRegistro(Long trabajadorId, EstadoRegistro estadoRegistro);
     List<Proyecto> findByEstadoAndEstadoRegistro(EstadoProyecto estado, EstadoRegistro estadoRegistro);
 }

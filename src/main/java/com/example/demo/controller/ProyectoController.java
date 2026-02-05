@@ -13,7 +13,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/proyectos")
-@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class ProyectoController {
     private final ProyectoService service;

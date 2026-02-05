@@ -4,6 +4,7 @@ import com.example.demo.dto.TrabajadorDTO;
 import com.example.demo.entity.Trabajador;
 import com.example.demo.entity.Cargo;
 import com.example.demo.entity.EstadoRegistro;
+import com.example.demo.entity.TipoDocumento;
 import com.example.demo.repository.TrabajadorRepository;
 import com.example.demo.service.TrabajadorService;
 import lombok.RequiredArgsConstructor;
@@ -38,13 +39,16 @@ public class TrabajadorServiceImpl implements TrabajadorService {
 
     @Override
     public TrabajadorDTO create(TrabajadorDTO dto) {
+        validarDocumento(dto);
         Trabajador entity = new Trabajador();
         entity.setNombre(dto.getNombre());
         entity.setApellido(dto.getApellido());
         entity.setEmail(dto.getEmail());
         entity.setTelefono(dto.getTelefono());
-        entity.setFechaIngreso(dto.getFechaIngreso());
+        entity.setFechaIngreso(dto.getFechaIngreso() != null ? dto.getFechaIngreso() : java.time.LocalDate.now());
         entity.setCargo(dto.getCargo());
+        entity.setTipoDocumento(dto.getTipoDocumento());
+        entity.setNumeroDocumento(normalizarNumeroDocumento(dto.getNumeroDocumento()));
         entity.setEstadoRegistro(EstadoRegistro.ACTIVO);
 
         Trabajador saved = trabajadorRepository.save(entity);
@@ -56,13 +60,16 @@ public class TrabajadorServiceImpl implements TrabajadorService {
     public TrabajadorDTO update(Long id, TrabajadorDTO dto) {
         Trabajador trabajador = trabajadorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Trabajador no encontrado con id: " + id));
+
+        validarDocumento(dto);
         
         trabajador.setNombre(dto.getNombre());
         trabajador.setApellido(dto.getApellido());
         trabajador.setEmail(dto.getEmail());
         trabajador.setTelefono(dto.getTelefono());
-        trabajador.setFechaIngreso(dto.getFechaIngreso());
         trabajador.setCargo(dto.getCargo());
+        trabajador.setTipoDocumento(dto.getTipoDocumento());
+        trabajador.setNumeroDocumento(normalizarNumeroDocumento(dto.getNumeroDocumento()));
         
         // Permite cambiar el estado si se envía en el DTO
         if (dto.getEstadoRegistro() != null) {
@@ -160,7 +167,41 @@ public class TrabajadorServiceImpl implements TrabajadorService {
         dto.setTelefono(t.getTelefono());
         dto.setFechaIngreso(t.getFechaIngreso());
         dto.setCargo(t.getCargo());
+        dto.setTipoDocumento(t.getTipoDocumento());
+        dto.setNumeroDocumento(t.getNumeroDocumento());
         dto.setEstadoRegistro(t.getEstadoRegistro());
         return dto;
+    }
+
+    private void validarDocumento(TrabajadorDTO dto) {
+        if (dto.getTipoDocumento() == null || dto.getNumeroDocumento() == null) {
+            throw new RuntimeException("Tipo y número de documento son obligatorios");
+        }
+
+        String numero = normalizarNumeroDocumento(dto.getNumeroDocumento());
+        TipoDocumento tipo = dto.getTipoDocumento();
+
+        switch (tipo) {
+            case DNI -> {
+                if (!numero.matches("\\d{8}")) {
+                    throw new RuntimeException("DNI inválido: debe tener 8 dígitos");
+                }
+            }
+            case CARNET_EXTRANJERIA -> {
+                if (!numero.matches("[A-Z0-9]{9,12}")) {
+                    throw new RuntimeException("Carné de Extranjería inválido: 9-12 caracteres alfanuméricos");
+                }
+            }
+            case RUC_RIF -> {
+                if (!numero.matches("(\\d{11}|[VEJG]\\d{9})")) {
+                    throw new RuntimeException("RUC/RIF inválido: 11 dígitos o prefijo V/E/J/G + 9 dígitos");
+                }
+            }
+            default -> throw new RuntimeException("Tipo de documento no válido");
+        }
+    }
+
+    private String normalizarNumeroDocumento(String numeroDocumento) {
+        return numeroDocumento == null ? null : numeroDocumento.trim().toUpperCase();
     }
 }

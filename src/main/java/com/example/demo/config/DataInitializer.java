@@ -31,5 +31,18 @@ public class DataInitializer implements CommandLineRunner {
         } else {
             log.info("Usuario admin ya existe");
         }
+
+        // Crear usuario adicional si no existe
+        if (usuarioRepository.findByUsername("brandolucana").isEmpty()) {
+            Usuario usuario = new Usuario();
+            usuario.setUsername("brandolucana");
+            usuario.setPassword(passwordEncoder.encode("flores123"));
+            usuario.setRole("ROLE_ADMIN");
+            usuario.setEstadoRegistro(EstadoRegistro.ACTIVO);
+            usuarioRepository.save(usuario);
+            log.info("Usuario brandolucana creado exitosamente");
+        } else {
+            log.info("Usuario brandolucana ya existe");
+        }
     }
 }

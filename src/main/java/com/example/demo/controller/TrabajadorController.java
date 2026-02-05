@@ -7,13 +7,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/trabajadores")
-@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class TrabajadorController {
     private final TrabajadorService service;
@@ -30,12 +30,12 @@ public class TrabajadorController {
     }
 
     @PostMapping
-    public TrabajadorDTO crear(@RequestBody TrabajadorDTO dto) {
+    public TrabajadorDTO crear(@Valid @RequestBody TrabajadorDTO dto) {
         return service.create(dto);
     }
 
     @PutMapping("/{id}")
-    public TrabajadorDTO actualizar(@PathVariable Long id, @RequestBody TrabajadorDTO dto) {
+    public TrabajadorDTO actualizar(@PathVariable Long id, @Valid @RequestBody TrabajadorDTO dto) {
         return service.update(id, dto);
     }
 

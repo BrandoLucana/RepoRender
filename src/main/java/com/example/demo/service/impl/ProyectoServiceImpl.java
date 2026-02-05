@@ -12,7 +12,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,16 +43,14 @@ public class ProyectoServiceImpl implements ProyectoService {
         Proyecto entity = new Proyecto();
         entity.setTitulo(dto.getTitulo());
         entity.setDescripcion(dto.getDescripcion());
-        entity.setFechaAsignacion(dto.getFechaAsignacion());
+        entity.setFechaAsignacion(dto.getFechaAsignacion() != null ? dto.getFechaAsignacion() : java.time.LocalDate.now());
         entity.setFechaLimite(dto.getFechaLimite());
         entity.setEstado(dto.getEstado() != null ? dto.getEstado() : EstadoProyecto.PENDIENTE);
         entity.setEstadoRegistro(EstadoRegistro.ACTIVO);
-        
-        if (dto.getTrabajadorId() != null) {
-            Trabajador trabajador = trabajadorRepository.findById(dto.getTrabajadorId())
-                    .orElseThrow(() -> new RuntimeException("Trabajador no encontrado"));
-            entity.setTrabajador(trabajador);
-        }
+
+        List<Long> ids = normalizarTrabajadorIds(dto);
+        validarMaximoTrabajadores(ids);
+        entity.setTrabajadores(obtenerTrabajadores(ids));
 
         Proyecto saved = proyectoRepository.save(entity);
         return toDTO(saved);
@@ -63,14 +63,13 @@ public class ProyectoServiceImpl implements ProyectoService {
         
         proyecto.setTitulo(dto.getTitulo());
         proyecto.setDescripcion(dto.getDescripcion());
-        proyecto.setFechaAsignacion(dto.getFechaAsignacion());
         proyecto.setFechaLimite(dto.getFechaLimite());
         proyecto.setEstado(dto.getEstado());
-        
-        if (dto.getTrabajadorId() != null) {
-            Trabajador trabajador = trabajadorRepository.findById(dto.getTrabajadorId())
-                    .orElseThrow(() -> new RuntimeException("Trabajador no encontrado"));
-            proyecto.setTrabajador(trabajador);
+
+        if (dto.getTrabajadorId() != null || dto.getTrabajadorIds() != null) {
+            List<Long> ids = normalizarTrabajadorIds(dto);
+            validarMaximoTrabajadores(ids);
+            proyecto.setTrabajadores(obtenerTrabajadores(ids));
         }
         
         // Permite cambiar el estado de registro si se envía en el DTO
@@ -94,7 +93,7 @@ public class ProyectoServiceImpl implements ProyectoService {
 
     @Override
     public List<ProyectoDTO> findByTrabajadorId(Long trabajadorId) {
-        return proyectoRepository.findByTrabajadorIdAndEstadoRegistro(trabajadorId, EstadoRegistro.ACTIVO).stream()
+        return proyectoRepository.findByTrabajadoresIdAndEstadoRegistro(trabajadorId, EstadoRegistro.ACTIVO).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -183,9 +182,43 @@ public class ProyectoServiceImpl implements ProyectoService {
         dto.setFechaLimite(p.getFechaLimite());
         dto.setEstado(p.getEstado());
         dto.setEstadoRegistro(p.getEstadoRegistro());
-        if (p.getTrabajador() != null) {
-            dto.setTrabajadorId(p.getTrabajador().getId());
+        if (p.getTrabajadores() != null && !p.getTrabajadores().isEmpty()) {
+            List<Long> ids = p.getTrabajadores().stream()
+                    .map(Trabajador::getId)
+                    .collect(Collectors.toList());
+            dto.setTrabajadorIds(ids);
+            if (!ids.isEmpty()) {
+                dto.setTrabajadorId(ids.get(0));
+            }
         }
         return dto;
+    }
+
+    private List<Long> normalizarTrabajadorIds(ProyectoDTO dto) {
+        Set<Long> ids = new LinkedHashSet<>();
+        if (dto.getTrabajadorIds() != null) {
+            ids.addAll(dto.getTrabajadorIds());
+        }
+        if (dto.getTrabajadorId() != null) {
+            ids.add(dto.getTrabajadorId());
+        }
+        return ids.stream().collect(Collectors.toList());
+    }
+
+    private void validarMaximoTrabajadores(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new RuntimeException("Debe asignar al menos un trabajador al proyecto");
+        }
+        if (ids.size() > 3) {
+            throw new RuntimeException("Máximo 3 trabajadores por proyecto");
+        }
+    }
+
+    private List<Trabajador> obtenerTrabajadores(List<Long> ids) {
+        List<Trabajador> trabajadores = trabajadorRepository.findAllById(ids);
+        if (trabajadores.size() != ids.size()) {
+            throw new RuntimeException("Uno o más trabajadores no existen");
+        }
+        return trabajadores;
     }
 }

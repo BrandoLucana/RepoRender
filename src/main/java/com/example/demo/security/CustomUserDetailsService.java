@@ -23,10 +23,20 @@ public class CustomUserDetailsService implements UserDetailsService {
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
 
+        String role = usuario.getRole();
+        if (role == null || role.isBlank()) {
+            role = "ROLE_ADMIN";
+        } else {
+            role = role.trim().toUpperCase();
+            if (!role.startsWith("ROLE_")) {
+                role = "ROLE_" + role;
+            }
+        }
+
         return User.builder()
                 .username(usuario.getUsername())
                 .password(usuario.getPassword())
-                .authorities(Collections.singletonList(new SimpleGrantedAuthority(usuario.getRole())))
+                .authorities(Collections.singletonList(new SimpleGrantedAuthority(role)))
                 .build();
     }
 }
